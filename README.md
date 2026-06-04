@@ -24,6 +24,45 @@
 
 ---
 
+<div align="center">
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="demo/SCR-20260604-nccl.png" alt="Dashboard" width="100%"/>
+      <br/><sub><b>Dashboard</b> — tasks, notifications &amp; quick actions</sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="demo/SCR-20260604-ndhw.png" alt="Projects" width="100%"/>
+      <br/><sub><b>Projects</b> — kanban-style project tracking</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <img src="demo/SCR-20260604-ncsr.png" alt="Hermes AI Agent Tools" width="100%"/>
+      <br/><sub><b>Hermes</b> — MCP tool configuration &amp; agent settings</sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="demo/SCR-20260604-ndlv.png" alt="Boardroom" width="100%"/>
+      <br/><sub><b>Boardroom</b> — multi-agent AI debate sessions</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <img src="demo/SCR-20260604-ndod.png" alt="Finance" width="100%"/>
+      <br/><sub><b>Finance</b> — income, expenses &amp; invoices</sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="demo/SCR-20260604-nchn.png" alt="SEO Analyst" width="100%"/>
+      <br/><sub><b>SEO Analyst</b> — Search Console analytics</sub>
+    </td>
+  </tr>
+</table>
+
+</div>
+
+---
+
 ## Table of Contents
 
 - [What is Loop?](#what-is-loop)
