@@ -53,7 +53,7 @@
       <br/><sub><b>Finance</b> — income, expenses &amp; invoices</sub>
     </td>
     <td align="center" width="50%">
-      <img src="demo/SCR-20260604-nchn.png" alt="SEO Analyst" width="100%"/>
+      <img src="demo/SCR-20260604-ounv.png" alt="SEO Analyst" width="100%"/>
       <br/><sub><b>SEO Analyst</b> — Search Console analytics</sub>
     </td>
   </tr>
