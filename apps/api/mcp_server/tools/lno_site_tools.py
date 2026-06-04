@@ -1,5 +1,5 @@
 """
-MCP tools for lno.co.in marketing site deploy (Vercel + GitHub prerender sync).
+MCP tools for your marketing site marketing site deploy (Vercel + GitHub prerender sync).
 
 Sitemap URLs are served dynamically from Supabase after the site ships api/sitemap.xml.
 This tool rebuilds static HTML (prerender) and refreshes .blog-slugs.json in the site repo.
@@ -18,7 +18,7 @@ from services import blog_service, site_deploy_service
 @mcp.tool()
 async def lno_site_list_published_urls(workspace_id: str, limit: int = 50) -> dict:
     """
-    List published blog URLs that should appear on lno.co.in/sitemap.xml and in prerender.
+    List published blog URLs that should appear on your marketing site/sitemap.xml and in prerender.
     Use after publishing posts to verify slugs before redeploying the site.
     """
     if not blog_service.is_configured():
@@ -30,7 +30,8 @@ async def lno_site_list_published_urls(workspace_id: str, limit: int = 50) -> di
         await agent_broadcast(workspace_id, "lno_site_list_published_urls", "error", entries["error"])
         return entries
 
-    urls = [f"https://lno.co.in{e['path']}" for e in entries[:limit]]
+    base_url = (settings.lno_site_supabase_url or "https://your-domain.com").rstrip("/")
+    urls = [f"{base_url}{e['path']}" for e in entries[:limit]]
     await agent_broadcast(
         workspace_id,
         "lno_site_list_published_urls",
@@ -41,7 +42,7 @@ async def lno_site_list_published_urls(workspace_id: str, limit: int = 50) -> di
         "count": len(urls),
         "urls": urls,
         "note": (
-            "Dynamic sitemap at https://lno.co.in/sitemap.xml updates without a git commit "
+            "Dynamic sitemap at https://your marketing site/sitemap.xml updates without a git commit "
             "once api/sitemap.xml is deployed. Static HTML still needs lno_site_redeploy."
         ),
     }
@@ -54,7 +55,7 @@ async def lno_site_redeploy(
     run_id: Optional[str] = None,
 ) -> dict:
     """
-    Queue a production redeploy of lno.co.in (requires human approval).
+    Queue a production redeploy of your marketing site (requires human approval).
 
     Steps when approved:
     1. Optionally commit .blog-slugs.json to the marketing site GitHub repo (all published posts).
@@ -83,7 +84,7 @@ async def lno_site_redeploy(
         {"sync_github": sync_github},
         risk_level="medium",
         run_id=run_id,
-        summary="Redeploy lno.co.in (Vercel build + optional GitHub slug sync)",
+        summary="Redeploy your marketing site (Vercel build + optional GitHub slug sync)",
     )
     await agent_broadcast(workspace_id, "lno_site_redeploy", "done", "queued")
     return result

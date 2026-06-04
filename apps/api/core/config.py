@@ -73,11 +73,11 @@ class Settings(BaseSettings):
     telegram_allowed_users: str = ""
     telegram_bot_name: str = ""   # bot username (no @)
 
-    # lno.co.in blog CMS (Supabase) — service role key bypasses RLS for agent writes
+    # marketing site blog CMS (Supabase) — service role key bypasses RLS for agent writes
     lno_site_supabase_url: str = ""
     lno_site_supabase_service_key: str = ""
 
-    # lno.co.in site deploy (TanStack/Vercel) — Hermes + auto-redeploy after blog publish
+    # marketing site deploy (TanStack/Vercel) — Hermes + auto-redeploy after blog publish
     lno_site_vercel_deploy_hook: str = ""  # Vercel → Project → Settings → Deploy Hooks
     lno_site_github_repo: str = ""
     lno_site_github_branch: str = "main"

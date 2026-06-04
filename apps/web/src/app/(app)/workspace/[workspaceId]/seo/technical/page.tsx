@@ -92,7 +92,7 @@ export default function SeoTechnicalPage() {
             <div className="flex gap-2 mt-1">
               <Input
                 id="url"
-                placeholder="https://lno.co.in/blog/my-post"
+                placeholder="https://your-domain.com/blog/my-post"
                 value={inspectUrl}
                 onChange={(e) => setInspectUrl(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleInspect()}

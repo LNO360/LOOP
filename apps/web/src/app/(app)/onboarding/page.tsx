@@ -200,7 +200,7 @@ function ProfileStep({
 
 // ── Telegram Login Widget ─────────────────────────────────────────────────
 
-const TG_BOT_NAME = "LNO_Founders_office_bot"
+const TG_BOT_NAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME || ""
 
 function TelegramLoginButton({ onConnected }: { onConnected: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null)

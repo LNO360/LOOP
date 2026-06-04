@@ -1,5 +1,5 @@
 """
-lno.co.in marketing site deploy — Vercel rebuild + optional GitHub slug sync.
+Marketing site deploy — Vercel rebuild + optional GitHub slug sync.
 
 After publishing a blog post in Supabase:
 - Dynamic sitemap (api/sitemap.xml on Vercel) picks up new URLs automatically.
@@ -90,7 +90,7 @@ async def sync_blog_slugs_to_github(
     repo = (repo or settings.lno_site_github_repo or "").strip()
     branch = (branch or settings.lno_site_github_branch or "main").strip()
     if not repo or "/" not in repo:
-        return {"ok": False, "error": "LNO_SITE_GITHUB_REPO not set (e.g. LNO360/lnotechnology)"}
+        return {"ok": False, "error": "LNO_SITE_GITHUB_REPO not set (e.g. your-org/your-site-repo)"}
 
     entries = await fetch_published_slug_entries()
     if isinstance(entries, dict) and "error" in entries:

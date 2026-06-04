@@ -52,7 +52,7 @@ mcp = FastMCP(
         "notifications, memory, blog drafts). Destructive operations (delete_task, delete_project, "
         "delete_message, delete_skill, lno_blog_publish, lno_site_redeploy) queue proposed_action "
         "for human approval. lno_site_list_published_urls shows blog URLs; lno_site_redeploy "
-        "rebuilds lno.co.in after new posts (Vercel + optional GitHub slug sync). "
+        "rebuilds the marketing site after new posts (Vercel + optional GitHub slug sync). "
         "gsc_* tools are read-only — cannot submit sitemaps to Google via MCP."
     ),
 )

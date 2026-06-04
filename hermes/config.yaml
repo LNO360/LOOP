@@ -126,7 +126,7 @@ mcp_servers:
         - lno_list_proposed_actions
         - lno_approve_proposed_action
         - lno_reject_proposed_action
-        # ── Blog CMS (lno.co.in) ────────────────────
+        # ── Blog CMS ──────────────────────────────
         - lno_blog_list_posts
         - lno_blog_get_post
         - lno_blog_seo_audit

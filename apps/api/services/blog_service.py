@@ -1,5 +1,5 @@
 """
-Blog CMS service for lno.co.in — shared by MCP tools and SEO REST API.
+Blog CMS service for the marketing site — shared by MCP tools and SEO REST API.
 """
 from __future__ import annotations
 

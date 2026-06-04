@@ -22,7 +22,7 @@ export function SeoAssistantPanel({
   className,
 }: SeoAssistantPanelProps) {
   const initialMessage = initialPrompt
-    ? `You are my SEO analyst for lno.co.in. Context: ${initialPrompt}. Analyze and suggest specific fixes.`
+    ? `You are my SEO analyst. Context: ${initialPrompt}. Analyze and suggest specific fixes.`
     : undefined
 
   return (

@@ -17,7 +17,7 @@ PR_OPENED_PAYLOAD = {
     "pull_request": {
         "number": 42,
         "title": "feat: billing",
-        "user": {"login": "ashikjoy"},
+        "user": {"login": "octocat"},
         "head": {"ref": "feat/billing", "sha": "abc123"},
         "base": {"ref": "main"},
     },
@@ -122,7 +122,7 @@ def _make_event(**kwargs) -> _GWE:
             "pull_request": {
                 "number": 42,
                 "title": "feat: billing",
-                "user": {"login": "ashikjoy"},
+                "user": {"login": "octocat"},
                 "head": {"ref": "feat/billing"},
                 "base": {"ref": "main"},
                 "merged": False,

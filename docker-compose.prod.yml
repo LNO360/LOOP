@@ -134,7 +134,7 @@ services:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_ALLOWED_USERS: ${TELEGRAM_ALLOWED_USERS}
       TELEGRAM_BOT_NAME: ${TELEGRAM_BOT_NAME}
-      # lno.co.in blog CMS
+      # Marketing site blog CMS
       LNO_SITE_SUPABASE_URL: ${LNO_SITE_SUPABASE_URL}
       LNO_SITE_SUPABASE_SERVICE_KEY: ${LNO_SITE_SUPABASE_SERVICE_KEY}
       # Hermes memory file (shared with hermes via the bind mount below)

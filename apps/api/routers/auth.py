@@ -152,13 +152,13 @@ async def telegram_connect_init(
 ):
     """
     Generate a short-lived 6-char OTP.
-    The user sends /connect <CODE> to @LNO_Founders_office_bot.
+    The user sends /connect <CODE> to the configured Telegram bot.
     The bot calls /telegram-connect/verify to link the Telegram user.
     """
     r = await _get_redis()
     code = secrets.token_hex(3).upper()           # e.g. "A3F7B2"
     await r.setex(f"tg_connect:{code}", 600, str(current_user.id))  # 10 min TTL
-    bot_name = settings.telegram_bot_name or "LNO_Founders_office_bot"
+    bot_name = settings.telegram_bot_name or ""
     return {
         "code":     code,
         "deeplink": f"https://t.me/{bot_name}?start=connect_{code}",

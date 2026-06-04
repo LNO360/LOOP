@@ -67,7 +67,7 @@ services:
       HERMES_HOME: /root/.hermes
       # Allow gateway to run as root in Docker (dev mode)
       HERMES_ALLOW_ROOT_GATEWAY: "1"
-      # Telegram gateway — @LNO_Founders_office_bot
+      # Telegram gateway — set TELEGRAM_BOT_TOKEN and TELEGRAM_ALLOWED_USERS in .env
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_ALLOWED_USERS: ${TELEGRAM_ALLOWED_USERS:-}
       SEARXNG_URL: ${SEARXNG_URL:-http://searxng:8080}

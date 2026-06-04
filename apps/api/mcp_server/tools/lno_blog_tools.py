@@ -1,5 +1,5 @@
 """
-MCP tools for lno.co.in blog CMS.
+MCP tools for the marketing site blog CMS.
 
 Read tools  (execute immediately): lno_blog_list_posts, lno_blog_get_post, lno_blog_seo_audit
 Write tools (execute immediately): lno_blog_create_post, lno_blog_update_post
@@ -23,7 +23,7 @@ async def lno_blog_list_posts(
     limit: int = 20,
 ) -> list[dict]:
     """
-    List posts on lno.co.in.
+    List blog posts on the marketing site.
     status: "all" | "draft" | "published"  (default: all)
     category: filter by category slug e.g. "operator" (optional)
     limit: max results, default 20, max 50
@@ -103,7 +103,7 @@ async def lno_blog_create_post(
     author_initials: Optional[str] = None,
 ) -> dict:
     """
-    Create a new draft post on lno.co.in.
+    Create a new draft post on the marketing site.
     content: TipTap JSON object e.g. {"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Hello"}]}]}
     category: "operator" (default) | "subscriber" | "product" | "industry"
     Always creates as status=draft — use lno_blog_publish_post to go live.
@@ -191,7 +191,7 @@ async def lno_blog_publish_post(
     post_id: str,
 ) -> dict:
     """
-    Queue a post for publishing on lno.co.in (requires human approval).
+    Queue a post for publishing on the marketing site (requires human approval).
     Returns {"proposed": true, "action_id": "..."}.
     """
     if not blog_service.is_configured():
