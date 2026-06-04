@@ -1,0 +1,243 @@
+version: '3.9'
+
+# ── Production Docker Compose (single VPS + Caddy) ─────────────
+# HTTPS/routing handled by the `caddy` service (automatic Let's Encrypt).
+# Deploy with:  ./deploy.sh   (which runs: docker compose --env-file .env.prod -f docker-compose.prod.yml ...)
+# Only ports 80/443 (Caddy) are exposed; everything else is internal on lno_net.
+
+services:
+
+  # ── Caddy reverse proxy (HTTPS + routing) ─────────────────────
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+      - api
+    networks:
+      - lno_net
+
+  # ── Postgres ──────────────────────────────────────────────────
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - lno_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis ─────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redisdata:/data
+    networks:
+      - lno_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── MinIO (file storage) ──────────────────────────────────────
+  minio:
+    image: minio/minio  # pin to a specific release tag in production (e.g. RELEASE.2025-xx-xx)
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - miniodata:/data
+    networks:
+      - lno_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── SearXNG (self-hosted search for Hermes) ───────────────────
+  searxng:
+    image: searxng/searxng:latest  # pin to a specific version tag in production
+    restart: unless-stopped
+    environment:
+      SEARXNG_BASE_URL: http://searxng:8080/
+      SEARXNG_LIMITER: "false"
+    volumes:
+      - ./infra/searxng/settings.yml:/etc/searxng/settings.yml:ro
+    networks:
+      - lno_net
+
+  # ── FastAPI backend ───────────────────────────────────────────
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379
+      ENVIRONMENT: production
+      # Auth + frontend
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL}
+      # File storage (MinIO)
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_BUCKET: ${S3_BUCKET}
+      # AI / OpenRouter
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL}
+      OPENROUTER_AGENT_MODEL: ${OPENROUTER_AGENT_MODEL}
+      OPENROUTER_FALLBACK_MODEL: ${OPENROUTER_FALLBACK_MODEL}
+      OPENROUTER_CRON_MODEL: ${OPENROUTER_CRON_MODEL:-openrouter/free}
+      HERMES_SERVICE_TOKEN: ${HERMES_SERVICE_TOKEN}
+      SEARXNG_URL: http://searxng:8080
+      BRAVE_SEARCH_API_KEY: ${BRAVE_SEARCH_API_KEY}
+      # Integration token encryption — MUST match the key used locally,
+      # or previously-saved integration tokens become undecryptable.
+      INTEGRATION_ENCRYPTION_KEY: ${INTEGRATION_ENCRYPTION_KEY}
+      # Google OAuth
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}
+      # GitHub OAuth + App (webhooks)
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      GITHUB_REDIRECT_URI: ${GITHUB_REDIRECT_URI}
+      GITHUB_DEFAULT_ORG: ${GITHUB_DEFAULT_ORG}
+      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET}
+      GITHUB_APP_ID: ${GITHUB_APP_ID}
+      GITHUB_APP_NAME: ${GITHUB_APP_NAME}
+      GITHUB_APP_PRIVATE_KEY_PATH: /run/secrets/github-app.private-key.pem
+      # Telegram
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_ALLOWED_USERS: ${TELEGRAM_ALLOWED_USERS}
+      TELEGRAM_BOT_NAME: ${TELEGRAM_BOT_NAME}
+      # lno.co.in blog CMS
+      LNO_SITE_SUPABASE_URL: ${LNO_SITE_SUPABASE_URL}
+      LNO_SITE_SUPABASE_SERVICE_KEY: ${LNO_SITE_SUPABASE_SERVICE_KEY}
+      # Hermes memory file (shared with hermes via the bind mount below)
+      HERMES_MEMORY_MD_PATH: /app/hermes-data/memories/MEMORY.md
+      # Daily digest allowlist (comma-separated UUIDs; empty = no scheduled digests)
+      DIGEST_WORKSPACE_IDS: ${DIGEST_WORKSPACE_IDS:-}
+      # Hermes chat/agents shell out via `docker exec` — container name + socket access
+      HERMES_CONTAINER: ${HERMES_CONTAINER:-lno-os-hermes-1}
+    group_add:
+      # Host docker.sock GID (VPS: `stat -c '%g' /var/run/docker.sock`). Override in .env.prod.
+      - "${DOCKER_GID:-988}"
+    volumes:
+      # GitHub App private key — stored at /root/.lno-secrets/ on server (never in repo)
+      - /root/.lno-secrets:/run/secrets:ro
+      # Hermes memory dir — shared so the memory-sync MCP tool can read/write MEMORY.md
+      - ./apps/hermes-data/memories:/app/hermes-data/memories
+      # Required for `docker exec` into the Hermes container from API workers
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - lno_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+      retries: 3
+
+  # ── Next.js frontend ──────────────────────────────────────────
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+      args:
+        # Build-time vars — baked into the JS bundle. Must be correct BEFORE build.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - lno_net
+
+  # ── Hermes autonomous agent sidecar ──────────────────────────
+  hermes:
+    build:
+      context: ./hermes
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      OPENROUTER_API_KEY_SECONDARY: ${OPENROUTER_API_KEY_SECONDARY:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      HERMES_SERVICE_TOKEN: ${HERMES_SERVICE_TOKEN}
+      HERMES_HOME: /root/.hermes
+      HERMES_ALLOW_ROOT_GATEWAY: "1"
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_ALLOWED_USERS: ${TELEGRAM_ALLOWED_USERS}
+      SEARXNG_URL: http://searxng:8080
+      GITHUB_APP_ID: ${GITHUB_APP_ID}
+      GITHUB_APP_NAME: ${GITHUB_APP_NAME}
+      GITHUB_APP_PRIVATE_KEY_PATH: /run/secrets/github-app.private-key.pem
+      AGENTCALL_API_KEY: ${AGENTCALL_API_KEY}
+      DEFAULT_WORKSPACE_ID: ${DEFAULT_WORKSPACE_ID:-}
+      DIGEST_WORKSPACE_IDS: ${DIGEST_WORKSPACE_IDS:-}
+    volumes:
+      - hermes-data:/root/.hermes
+      - ./apps/hermes-skills:/lno-skills:ro
+      - ./apps/user-agent-skills:/user-agent-skills:rw
+      - ./hermes/SOUL.md:/root/.hermes/SOUL.md
+      - ./hermes/config.yaml:/root/.hermes/config.yaml
+      # Cron profile config: bind-mount the source so cron MCP config stays live
+      # from repo on restart (entrypoint copies it into the profile each boot).
+      # Without this it is frozen at image-build time → stale cron MCP toolset.
+      - ./hermes/profile-cron-config.yaml:/opt/lno-hermes/profile-cron-config.yaml
+      - ./apps/hermes-data/memories:/root/.hermes/memories
+      # GitHub App private key — stored at /root/.lno-secrets/ on server (never in repo)
+      - /root/.lno-secrets:/run/secrets:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+      searxng:
+        condition: service_started
+    networks:
+      - lno_net
+
+volumes:
+  pgdata:
+  redisdata:
+  miniodata:
+  hermes-data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  lno_net:
+    driver: bridge

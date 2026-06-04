@@ -1,0 +1,212 @@
+# Hermes Agent — LNO OS Integration Config
+# Copied to /root/.hermes/config.yaml in the container
+# Env vars are interpolated at runtime: ${VAR_NAME}
+
+# ── Model ──────────────────────────────────────────────────────
+# Use nested format: model.default (bare model ID) + model.provider (separate)
+# Flat "openrouter:model" string causes normalize_model_for_provider to
+# pass the prefix through to the API, resulting in HTTP 400.
+# Interactive only (Telegram gateway, manual hermes chat). Scheduled jobs use profile
+# "cron" → openrouter/free (see profile-cron-config.yaml + entrypoint.sh).
+model:
+  default: "openrouter/owl-alpha"
+  provider: "openrouter"
+
+providers:
+  openrouter:
+    api_key: "${OPENROUTER_API_KEY}"
+
+# Second OpenRouter account — separate free/paid quota (OPENROUTER_API_KEY_SECONDARY in .env).
+custom_providers:
+  - name: openrouter2
+    base_url: https://openrouter.ai/api/v1
+    key_env: OPENROUTER_API_KEY_SECONDARY
+  - name: groq
+    base_url: https://api.groq.com/openai/v1
+    key_env: GROQ_API_KEY
+
+# Interactive (Telegram): account 1 (owl-alpha) → account 2 OR → Groq.
+# Account 2 retries owl-alpha / free / DeepSeek on a fresh OpenRouter key before Groq.
+# Crons use account 2 only — profile-cron-config.yaml (keeps account 1 for you).
+# ⚠️ Each fallback can re-send full session context — start a new chat after deep fallbacks.
+fallback_providers:
+  - provider: custom:openrouter2
+    model: openrouter/owl-alpha
+  - provider: custom:openrouter2
+    model: openrouter/free
+  - provider: custom:openrouter2
+    model: deepseek/deepseek-v4-flash
+  # Groq — third quota pool; explicit models (no auto-router)
+  - provider: custom:groq
+    model: openai/gpt-oss-120b
+  - provider: custom:groq
+    model: meta-llama/llama-4-scout-17b-16e-instruct
+  - provider: custom:groq
+    model: openai/gpt-oss-20b
+  - provider: custom:groq
+    model: llama-3.3-70b-versatile
+
+# ── Toolsets ───────────────────────────────────────────────────
+# hermes-cli:      memory, files, terminal (required for MEMORY.md)
+# skills:          lno + user agent skills
+# mcp:             LNO OS (tasks, finance, GitHub, web_fetch_page, teams, …)
+# web:             Hermes web search/extract (no Brave key)
+# delegation:      delegate_task parallel subagents
+# session_search:  search past conversations
+# todo:            multi-step planning within a turn
+# cronjob:         create/edit scheduled jobs from chat/Telegram (not inside cron runs)
+# vision:          analyze images/screenshots (Telegram photos, charts)
+# code_execution:  multi-step scripts (strict sandbox — see code_execution: below)
+# clarify:         ask the user when a request is ambiguous
+# browser:         JS-heavy sites — local headless Chromium via agent-browser CLI
+#                  (Node + agent-browser + Chromium installed in hermes/Dockerfile)
+#
+# Per-platform: docker exec -it lnoos-hermes-1 hermes tools
+#   gateway/Telegram: toolsets below
+#   cron platform:    mcp, skills, web only (omit browser, delegation, cronjob, code_execution)
+toolsets:
+  - hermes-cli
+  - skills
+  - mcp
+  - web
+  - delegation
+  - session_search
+  - todo
+  - cronjob
+  - vision
+  - code_execution
+  - clarify
+  - browser
+
+# ── Web search backend (required for web_search / web_extract to appear) ─
+# Toolset "web" alone is not enough — Hermes registers those tools only when a backend is set.
+# SearXNG: no API key. Extract pages via MCP web_fetch_page (see SOUL.md).
+# Docs: https://hermes-agent.nousresearch.com/docs/user-guide/configuration#web-search-backends
+web:
+  search_backend: searxng
+
+# ── Code execution (advanced — not for fetching web pages) ─────
+# strict = isolated temp dir; scripts cannot call MCP or delegate_task.
+# Use for: crunching tool output, CSV/JSON transforms, math — after web_research returns.
+code_execution:
+  mode: strict
+  timeout: 180
+  max_tool_calls: 40
+
+# ── MCP Servers ────────────────────────────────────────────────
+# LNO OS exposes itself as an MCP server at /mcp on the API container
+mcp_servers:
+  lno-os:
+    url: "http://api:8000/mcp/mcp"
+    headers:
+      Authorization: "Bearer ${HERMES_SERVICE_TOKEN}"
+    enabled: true
+    tools:
+      include:
+        # ── Core workspace ──────────────────────────
+        - lno_get_workspace_snapshot
+        # ── Tasks ───────────────────────────────────
+        - lno_list_tasks
+        - lno_list_overdue_tasks
+        - lno_create_task
+        - lno_update_task
+        - lno_list_projects
+        - lno_create_project
+        - lno_update_project
+        # ── Memory ──────────────────────────────────
+        - lno_get_workspace_memory
+        - lno_upsert_workspace_memory
+        - lno_search_workspace_memory
+        - lno_semantic_search_workspace_memory
+        - lno_delete_workspace_memory
+        # ── Output ──────────────────────────────────
+        - lno_send_channel_message
+        - lno_create_notification
+        # ── Approvals ───────────────────────────────
+        - lno_list_proposed_actions
+        - lno_approve_proposed_action
+        - lno_reject_proposed_action
+        # ── Blog CMS (lno.co.in) ────────────────────
+        - lno_blog_list_posts
+        - lno_blog_get_post
+        - lno_blog_seo_audit
+        - lno_blog_create_post
+        - lno_blog_update_post
+        - lno_blog_publish_post
+        - lno_blog_delete_post
+        # ── Skills ──────────────────────────────────
+        - lno_read_skill
+        - lno_list_skills
+        # ── Discovery & dispatch ─────────────────────
+        - lno_find_tools
+        - lno_invoke
+        # ── SEO (Search Console + web research) ─────
+        - gsc_list_sites
+        - gsc_search_analytics
+        - gsc_list_sitemaps
+        - gsc_inspect_url
+        - web_search
+        - web_fetch_page
+        # Domain tools (gmail, drive, calendar, github,
+        # finance) are discoverable via lno_find_tools
+        # — not pre-loaded here.
+
+# ── Memory ─────────────────────────────────────────────────────
+memory:
+  memory_enabled: true
+  user_profile_enabled: true
+  memory_char_limit: 2000
+  user_char_limit: 1000
+
+# ── Approvals ──────────────────────────────────────────────────
+# cron_mode: "approve" → scheduled jobs run without per-turn approval
+# mode: "smart" → shell commands that look dangerous still get confirmed
+approvals:
+  mode: "smart"
+  cron_mode: "approve"
+  timeout: 60
+
+# ── Terminal ───────────────────────────────────────────────────
+terminal:
+  backend: "local"
+  persistent_shell: true
+  timeout: 180
+
+# ── Agent ──────────────────────────────────────────────────────
+agent:
+  max_turns: 15
+  gateway_timeout: 3600
+  max_tokens: 1024
+
+# ── Delegation (subagents) ─────────────────────────────────────
+delegation:
+  model: "openrouter/free"
+  max_concurrent_children: 2
+  max_spawn_depth: 1
+  max_iterations: 30
+  child_timeout_seconds: 600
+  orchestrator_enabled: false
+
+# ── Display ────────────────────────────────────────────────────
+display:
+  streaming: false
+  show_cost: true
+
+# ── Compression (context management) ──────────────────────────
+# threshold is a fraction of the MAIN model's context window. At 0.22 Hermes
+# compacts at ~22% of the context window — aggressive early compaction to keep
+# per-turn token floor low (was 0.35).
+# target_ratio = tail kept after compaction; protect_last_n = min recent msgs kept verbatim.
+compression:
+  enabled: true
+  threshold: 0.22
+  target_ratio: 0.15
+  protect_last_n: 5
+
+# ── Telegram Gateway ───────────────────────────────────────────
+# Bot: @your_telegram_bot_name
+# TELEGRAM_ALLOWED_USERS: your numeric Telegram user ID
+# reactions: false → don't react to every message with emoji
+telegram:
+  reactions: false
+  allowed_users: "${TELEGRAM_ALLOWED_USERS}"

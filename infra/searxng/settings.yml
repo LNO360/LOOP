@@ -1,0 +1,16 @@
+# Local LNO OS — allow JSON API from Docker network + localhost
+use_default_settings: true
+
+server:
+  secret_key: "lno-os-local-searx-dev-change-on-vps"
+  limiter: false
+  image_proxy: false
+
+search:
+  safe_search: 0
+  formats:
+    - html
+    - json
+
+ui:
+  static_use_hash: true

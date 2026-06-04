@@ -1,0 +1,23 @@
+# ── LNO OS — Caddy reverse proxy ───────────────────────────────
+# Caddy terminates HTTPS (automatic Let's Encrypt cert) and routes:
+#   /api/*  and  /ws/*   → FastAPI  (api:8000)   — NO prefix stripping
+#   everything else      → Next.js  (web:3000)
+#
+# WebSocket upgrades are handled automatically by reverse_proxy.
+# Change the email below to a real address you control (used for ACME/cert notices).
+
+{
+	email you@example.com
+}
+
+your-domain.com {
+	# API + WebSocket → FastAPI. FastAPI already serves /api/v1/... and /ws/...
+	# natively, so we must NOT strip the /api prefix.
+	@backend path /api/* /ws/*
+	reverse_proxy @backend api:8000
+
+	# Everything else → Next.js frontend
+	reverse_proxy web:3000
+
+	encode gzip zstd
+}

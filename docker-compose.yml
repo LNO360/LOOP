@@ -1,0 +1,115 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: lno
+      POSTGRES_PASSWORD: lno_dev
+      POSTGRES_DB: lno_os
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - lno_net
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - lno_net
+
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: lno_minio
+      MINIO_ROOT_PASSWORD: lno_minio_dev
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+    networks:
+      - lno_net
+
+  # Self-hosted metasearch for Hermes web_search (no Brave/Firecrawl key)
+  searxng:
+    image: searxng/searxng:latest
+    restart: unless-stopped
+    environment:
+      SEARXNG_BASE_URL: http://127.0.0.1:8080/
+      SEARXNG_LIMITER: "false"
+    volumes:
+      - ./infra/searxng/settings.yml:/etc/searxng/settings.yml:ro
+    ports:
+      # API on host uses 127.0.0.1:8080; Hermes container uses http://searxng:8080
+      - "127.0.0.1:8080:8080"
+    networks:
+      - lno_net
+
+  # ── Hermes autonomous agent sidecar ──────────────────────────
+  hermes:
+    build:
+      context: ./hermes
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      # Hermes dashboard HTTP API — proxied by FastAPI for direct chat
+      - "9119:9119"
+    environment:
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_API_KEY_SECONDARY: ${OPENROUTER_API_KEY_SECONDARY:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      HERMES_SERVICE_TOKEN: ${HERMES_SERVICE_TOKEN:-dev-token-change-in-production}
+      HERMES_HOME: /root/.hermes
+      # Allow gateway to run as root in Docker (dev mode)
+      HERMES_ALLOW_ROOT_GATEWAY: "1"
+      # Telegram gateway — @LNO_Founders_office_bot
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_ALLOWED_USERS: ${TELEGRAM_ALLOWED_USERS:-}
+      SEARXNG_URL: ${SEARXNG_URL:-http://searxng:8080}
+      # Enable TUI chat in dashboard so FastAPI can talk to Hermes via HTTP
+      HERMES_DASHBOARD_TUI: "1"
+      # GitHub App credentials — lets Hermes generate installation tokens
+      GITHUB_APP_ID: ${GITHUB_APP_ID:-}
+      GITHUB_APP_NAME: ${GITHUB_APP_NAME:-}
+      GITHUB_APP_PRIVATE_KEY_PATH: /run/secrets/github-app.private-key.pem
+    volumes:
+      - hermes-data:/root/.hermes
+      - ./apps/hermes-skills:/lno-skills:ro
+      # User-created agent skills written by FastAPI — writable
+      - ./apps/user-agent-skills:/user-agent-skills:rw
+      # Bind-mount specific files so FastAPI can read/write them on the host.
+      # File-level bind mounts take precedence over the named volume at those paths.
+      - ./hermes/SOUL.md:/root/.hermes/SOUL.md
+      - ./hermes/config.yaml:/root/.hermes/config.yaml
+      # Hermes built-in memory lives under memories/ (not top-level MEMORY.md)
+      - ./apps/hermes-data/memories/MEMORY.md:/root/.hermes/memories/MEMORY.md
+      - ./apps/hermes-data/memories/USER.md:/root/.hermes/memories/USER.md
+      # Research/knowledge docs — sync from container first: bash scripts/backup-hermes-local.sh --sync
+      - ./apps/hermes-data/knowledge:/root/.hermes/knowledge
+      # GitHub App private key — stored OUTSIDE repo at ~/.lno-secrets/
+      # Never put PEM files inside the repo tree.
+      - ${LNO_SECRETS_DIR:-~/.lno-secrets}:/run/secrets:ro
+    depends_on:
+      - postgres
+      - searxng
+    # host-gateway maps "api" → host machine IP so hermes can reach
+    # the LNO API running locally (uvicorn on port 8000).
+    # In production, remove this and run api as a compose service instead.
+    extra_hosts:
+      - "api:host-gateway"
+    networks:
+      - lno_net
+
+volumes:
+  pgdata:
+  miniodata:
+  hermes-data:
+
+networks:
+  lno_net:
+    driver: bridge

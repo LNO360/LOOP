@@ -1,0 +1,76 @@
+# Hermes profile: cron — scheduled jobs only (second OpenRouter account).
+# Keeps OPENROUTER_API_KEY (account 1) for Telegram primary / fallbacks.
+# Do NOT add Groq here — reserve Groq for Telegram (root config.yaml).
+model:
+  default: "openrouter/free"
+  provider: "custom:openrouter2"
+
+custom_providers:
+  - name: openrouter2
+    base_url: https://openrouter.ai/api/v1
+    key_env: OPENROUTER_API_KEY_SECONDARY
+
+providers:
+  openrouter:
+    api_key: "${OPENROUTER_API_KEY}"
+
+# Lighter tool surface for scheduled runs (see SOUL.md)
+toolsets:
+  - hermes-cli
+  - skills
+  - mcp
+  - web
+
+memory:
+  memory_enabled: true
+  user_profile_enabled: false
+  memory_char_limit: 2000
+  user_char_limit: 1000
+
+approvals:
+  mode: "smart"
+  cron_mode: "approve"
+  timeout: 60
+
+agent:
+  max_turns: 25
+  gateway_timeout: 3600
+  max_tokens: 1024
+
+delegation:
+  model: "openrouter/free"
+  max_concurrent_children: 2
+  max_spawn_depth: 1
+  max_iterations: 15
+  child_timeout_seconds: 300
+  orchestrator_enabled: false
+
+compression:
+  enabled: true
+  threshold: 0.25
+  target_ratio: 0.20
+  protect_last_n: 4
+
+mcp_servers:
+  lno-os:
+    url: "http://api:8000/mcp/mcp"
+    headers:
+      Authorization: "Bearer ${HERMES_SERVICE_TOKEN}"
+    enabled: true
+    tools:
+      include:
+        - lno_list_workspaces        # crons call this FIRST to discover workspace IDs
+        - lno_get_workspace_snapshot
+        - lno_search_workspace_memory
+        - lno_upsert_workspace_memory
+        - lno_get_workspace_memory
+        - lno_list_tasks
+        - lno_list_overdue_tasks
+        - lno_list_projects
+        - lno_create_project
+        - lno_send_channel_message
+        - lno_create_notification
+        - lno_list_proposed_actions
+        - finance_get_overview
+        - finance_get_summary
+        - web_search

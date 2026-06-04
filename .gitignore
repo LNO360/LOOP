@@ -1,0 +1,78 @@
+# ── Dependencies ──────────────────────────────────────────────────────────────
+node_modules
+.pnpm-store
+
+# ── Build outputs ─────────────────────────────────────────────────────────────
+.next
+dist
+build
+*.egg-info/
+.eggs/
+
+# ── Python compiled ───────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ── Virtual environments ──────────────────────────────────────────────────────
+.venv/
+venv/
+.uv/
+env/
+
+# ── Environment files — NEVER commit real secrets ─────────────────────────────
+.env
+.env.prod
+.env.local
+.env.*.local
+backups/
+# .env.example and .env.prod.example are safe (placeholders only — verify before committing)
+
+# ── Private keys and secrets ──────────────────────────────────────────────────
+secrets/
+*.pem
+*.key
+*.p12
+*.pfx
+*.cer
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+logs/
+npm-debug.log*
+pnpm-debug.log*
+
+# ── SSL certs (managed by Certbot on the server) ──────────────────────────────
+nginx/certs/
+
+# ── Uploads / user-generated media ────────────────────────────────────────────
+uploads/
+media/
+
+# ── Backups ───────────────────────────────────────────────────────────────────
+*.sql.gz
+*.dump
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+
+# ── Editor ────────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ── Claude Code tooling (not part of the app runtime) ─────────────────────────
+.claude/
+
+# ── Runtime lock files ────────────────────────────────────────────────────────
+*.md.lock
+scheduled_tasks.lock

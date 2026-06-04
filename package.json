@@ -1,0 +1,15 @@
+{
+  "name": "lno-os",
+  "private": true,
+  "scripts": {
+    "dev:web": "pnpm --filter web dev",
+    "dev:api": "cd apps/api && uvicorn main:app --reload --port 8000",
+    "backup:hermes": "bash scripts/backup-hermes-local.sh --sync",
+    "backup:hermes:full": "bash scripts/backup-hermes-local.sh --sync --with-db",
+    "db:migrate": "cd apps/api && alembic upgrade head",
+    "db:makemigration": "cd apps/api && alembic revision --autogenerate -m",
+    "cleanup:workspaces": "cd apps/api && python scripts/cleanup_workspaces.py --list",
+    "cleanup:workspaces:dry": "cd apps/api && python scripts/cleanup_workspaces.py --dry-run",
+    "cleanup:workspaces:exec": "CLEANUP_CONFIRM=yes-delete-workspaces cd apps/api && python scripts/cleanup_workspaces.py --execute"
+  }
+}
