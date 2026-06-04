@@ -2,7 +2,7 @@
 
 # Loop
 
-### Open-Source AI Workspace OS
+### Open-Source AI Workspace
 
 **A self-hosted workspace for small teams — tasks, chat, docs, and an AI agent (Hermes)**<br/>
 **that connects to your calendar, email, GitHub, and finances via Telegram or the web.**
