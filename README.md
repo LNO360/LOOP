@@ -1,11 +1,26 @@
-# Loop — Open-Source AI Workspace OS
+<div align="center">
 
-> A self-hosted workspace platform for small teams, with a built-in AI agent (Hermes) that connects to your tasks, calendar, email, GitHub, and finances — reachable via Telegram or the web UI.
+# Loop
 
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)](docker-compose.yml)
-[![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python)](apps/api)
-[![Next.js](https://img.shields.io/badge/Next.js-15-000000?logo=nextdotjs)](apps/web)
+### Open-Source AI Workspace OS
+
+**A self-hosted workspace for small teams — tasks, chat, docs, and an AI agent (Hermes)**<br/>
+**that connects to your calendar, email, GitHub, and finances via Telegram or the web.**
+
+<br/>
+
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](LICENSE)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white)](docker-compose.yml)
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)](apps/api)
+[![Next.js](https://img.shields.io/badge/Next.js-15-000000?style=flat-square&logo=nextdotjs&logoColor=white)](apps/web)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16+pgvector-4169E1?style=flat-square&logo=postgresql&logoColor=white)](apps/api)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](https://github.com/LNO360/LOOP/pulls)
+
+<br/>
+
+[**Quick Start**](#quick-start--local-development) · [**Production Deploy**](#production-deployment) · [**Hermes Agent**](#hermes-ai-agent) · [**Docs**](docs/)
+
+</div>
 
 ---
 
